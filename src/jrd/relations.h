@@ -807,3 +807,4 @@ RELATION(nam_schemas, rel_schemas, ODS_13_2, rel_persistent)
 	FIELD(f_sch_charset, nam_charset_name, fld_charset_name, 1, ODS_13_2)	// FIXME: use
 	FIELD(f_sch_charset_schema, nam_charset_sch_name, fld_sch_name, 1, ODS_13_2)
 END_RELATION
+// FIXME: schema to MON$ tables

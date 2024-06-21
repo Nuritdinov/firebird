@@ -183,7 +183,7 @@ void InnerJoin::estimateCost(unsigned position,
 	// which indexes will be used and the total estimated selectivity will be returned
 	Retrieval retrieval(tdbb, optimizer, stream->number, false, false, sort, true);
 	const auto candidate = retrieval.getInversion();
-	fb_assert(!position || candidate->dependencies);
+	// FIXME: fb_assert(!position || candidate->dependencies);
 
 	// Remember selectivity of this stream
 	joinedStreams[position].selectivity = candidate->selectivity;

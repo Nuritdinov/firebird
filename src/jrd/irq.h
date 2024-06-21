@@ -185,6 +185,17 @@ enum irq_type_t
 	irq_proc_param_dep,		// check procedure parameter dependency
 	irq_func_param_dep,		// check function parameter dependency
 	irq_l_pub_tab_state,	// lookup publication state for a table
+	irq_l_sch_charset,
+	irq_l_sch_collation,
+	irq_l_sch_exception,
+	irq_l_sch_field,
+	irq_l_sch_generator,
+	irq_l_sch_index,
+	irq_l_sch_package,
+	irq_l_sch_procedure,
+	irq_l_sch_relation,
+	irq_l_sch_trigger,
+	irq_l_sch_function,
 
 	irq_MAX
 };

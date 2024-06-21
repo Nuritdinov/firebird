@@ -495,7 +495,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 	message->msg_parameters.insert(0, parameter);
 	parameter->par_parameter = message->msg_parameter++;
 
-	parameter->par_rel_name = NULL;
+	parameter->par_rel_name.clear();
 	parameter->par_owner_name = NULL;
 	parameter->par_rel_alias = NULL;
 

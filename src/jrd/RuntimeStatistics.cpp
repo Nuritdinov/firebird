@@ -115,7 +115,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 				TraceCounts traceCounts;
 				traceCounts.trc_relation_id = rel_id;
 				traceCounts.trc_counters = base_cnts->getCounterVector();
-				traceCounts.trc_relation_name = relation ? relation->rel_name.c_str() : NULL;
+				traceCounts.trc_relation_name = "";	// FIXME: traceCounts.trc_relation_name = relation ? relation->rel_name.c_str() : NULL;
 				temp.add(traceCounts);
 			}
 
@@ -132,7 +132,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 			TraceCounts traceCounts;
 			traceCounts.trc_relation_id = rel_id;
 			traceCounts.trc_counters = new_cnts->getCounterVector();
-			traceCounts.trc_relation_name = relation ? relation->rel_name.c_str() : NULL;
+			traceCounts.trc_relation_name = "";	// FIXME: traceCounts.trc_relation_name = relation ? relation->rel_name.c_str() : NULL;
 			temp.add(traceCounts);
 		}
 	};

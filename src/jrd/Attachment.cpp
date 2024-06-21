@@ -257,6 +257,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, JProvider* provider
 	  att_dest_bind(&att_bindings),
 	  att_original_timezone(TimeZoneUtil::getSystemTimeZone()),
 	  att_current_timezone(att_original_timezone),
+	  att_schema_search_path(*pool),
 	  att_parallel_workers(0),
 	  att_repl_appliers(*pool),
 	  att_utility(UTIL_NONE),
@@ -277,6 +278,10 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, JProvider* provider
 {
 	att_internal.grow(irq_MAX);
 	att_dyn_req.grow(drq_MAX);
+
+	// FIXME:
+	///att_schema_search_path.push("USR");
+	att_schema_search_path.push(SYSTEM_SCHEMA);
 }
 
 
@@ -320,6 +325,7 @@ Jrd::Attachment::~Attachment()
 Jrd::PreparedStatement* Jrd::Attachment::prepareStatement(thread_db* tdbb, jrd_tra* transaction,
 	const string& text, Firebird::MemoryPool* pool)
 {
+	// FIXME: schema
 	pool = pool ? pool : tdbb->getDefaultPool();
 	return FB_NEW_POOL(*pool) PreparedStatement(tdbb, *pool, this, transaction, text, true);
 }
@@ -328,6 +334,7 @@ Jrd::PreparedStatement* Jrd::Attachment::prepareStatement(thread_db* tdbb, jrd_t
 Jrd::PreparedStatement* Jrd::Attachment::prepareStatement(thread_db* tdbb, jrd_tra* transaction,
 	const PreparedStatement::Builder& builder, Firebird::MemoryPool* pool)
 {
+	// FIXME: schema
 	pool = pool ? pool : tdbb->getDefaultPool();
 	return FB_NEW_POOL(*pool) PreparedStatement(tdbb, *pool, this, transaction, builder, true);
 }
@@ -1210,4 +1217,16 @@ bool Attachment::isProfilerActive()
 void Attachment::releaseProfilerManager()
 {
 	att_profiler_manager.reset();
+}
+
+void Attachment::qualifyExistingName(thread_db* tdbb, QualifiedName& name, ObjectType objType)
+{
+	if (name.object.hasData())
+	{
+		if (name.schema.isEmpty())
+		{
+			if (!MET_qualify_existing_name(tdbb, name, objType))
+				qualifyNewName(tdbb, name);
+		}
+	}
 }

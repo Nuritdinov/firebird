@@ -1817,6 +1817,7 @@ static const UCHAR trigger23[] =
 static const TEXT trigger_24_msg_0 [] = "Cannot rename field being used in an integrity constraint.";
 ******/
 
+// FIXME: What? And others...
 static const UCHAR trigger24[] =
 {
 	blr_version5,

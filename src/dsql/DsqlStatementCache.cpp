@@ -232,6 +232,8 @@ void DsqlStatementCache::buildStatementKey(thread_db* tdbb, RefStrPtr& key, cons
 {
 	const auto attachment = tdbb->getAttachment();
 
+	// FIXME: schema search path
+
 	const SSHORT charSetId = isInternalRequest ? CS_METADATA : attachment->att_charset;
 	const int debugOptions = (int) attachment->getDebugOptions().getDsqlKeepBlr();
 

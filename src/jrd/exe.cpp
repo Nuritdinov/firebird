@@ -1462,10 +1462,10 @@ bool EXE_get_stack_trace(const Request* request, string& sTrace)
 
 		string context, name;
 
-		if (statement->triggerName.length())
+		if (statement->triggerName.object.length())
 		{
 			context = "At trigger";
-			name = statement->triggerName.c_str();
+			name = statement->triggerName.toString();
 		}
 		else if (statement->procedure)
 		{

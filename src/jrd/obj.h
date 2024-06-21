@@ -110,6 +110,7 @@ inline bool isDdlObject(ObjectType object_type)
 }
 
 
+// FIXME: That may make sense to be associated with databases and schemas.
 inline const char* getSecurityClassName(ObjectType object_type)
 {
 	switch (object_type)

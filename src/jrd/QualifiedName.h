@@ -27,39 +27,48 @@
 #ifndef JRD_QUALIFIEDNAME_H
 #define JRD_QUALIFIEDNAME_H
 
-#include "MetaName.h"
+#include "../jrd/MetaName.h"
 #include "../common/classes/array.h"
+#include "../common/classes/fb_pair.h"
+#include "../common/StatusArg.h"
 
 namespace Jrd {
 
 class QualifiedName
 {
 public:
-	QualifiedName(MemoryPool& p, const MetaName& aIdentifier, const MetaName& aPackage)
-		: identifier(p, aIdentifier),
+	explicit QualifiedName(MemoryPool& p, const MetaName& aObject,
+			const MetaName& aSchema = {}, const MetaName& aPackage = {})
+		: object(p, aObject),
+		  schema(p, aSchema),
 		  package(p, aPackage)
 	{
 	}
 
-	QualifiedName(const MetaName& aIdentifier, const MetaName& aPackage)
-		: identifier(aIdentifier),
+	explicit QualifiedName(const MetaName& aObject, const MetaName& aSchema = {}, const MetaName& aPackage = {})
+		: object(aObject),
+		  schema(aSchema),
 		  package(aPackage)
 	{
 	}
 
-	QualifiedName(MemoryPool& p, const MetaName& aIdentifier)
-		: identifier(p, aIdentifier),
-		  package(p)
+	QualifiedName(MemoryPool& p, const QualifiedName& src)
+		: object(p, src.object),
+		  schema(p, src.schema),
+		  package(p, src.package)
 	{
 	}
 
-	explicit QualifiedName(const MetaName& aIdentifier)
-		: identifier(aIdentifier)
+	QualifiedName(const QualifiedName& src)
+		: object(src.object),
+		  schema(src.schema),
+		  package(src.package)
 	{
 	}
 
 	explicit QualifiedName(MemoryPool& p)
-		: identifier(p),
+		: object(p),
+		  schema(p),
 		  package(p)
 	{
 	}
@@ -68,45 +77,81 @@ public:
 	{
 	}
 
-	QualifiedName(MemoryPool& p, const QualifiedName& src)
-		: identifier(p, src.identifier),
-		  package(p, src.package)
+public:
+	bool operator<(const QualifiedName& m) const
 	{
+		return schema < m.schema ||
+			(schema == m.schema && object < m.object) ||
+			(schema == m.schema && object == m.object && package < m.package);
+	}
+
+	bool operator>(const QualifiedName& m) const
+	{
+		return schema > m.schema ||
+			(schema == m.schema && object > m.object) ||
+			(schema == m.schema && object == m.object && package > m.package);
+	}
+
+	bool operator==(const QualifiedName& m) const
+	{
+		return schema == m.schema && object == m.object && package == m.package;
+	}
+
+	bool operator!=(const QualifiedName& m) const
+	{
+		return !(*this == m);
 	}
 
 public:
-	bool operator >(const QualifiedName& m) const
+	QualifiedName getSchemaAndPackage() const
 	{
-		return package > m.package || (package == m.package && identifier > m.identifier);
+		return QualifiedName(package, schema);
 	}
 
-	bool operator ==(const QualifiedName& m) const
+	/* FIXME:
+	QualifiedName withPackage(const MetaName& newPackage) const
 	{
-		return identifier == m.identifier && package == m.package;
+		return QualifiedName(object, schema, newPackage);
+	}
+	*/
+
+	void clear()
+	{
+		object = {};
+		schema = {};
+		package = {};
 	}
 
-	bool operator !=(const QualifiedName& m) const
-	{
-		return !(identifier == m.identifier && package == m.package);
-	}
-
-public:
 	Firebird::string toString() const
 	{
+		// FIXME: Quote names when necessary?
+
 		Firebird::string s;
-		if (package.hasData())
+
+		if (schema.hasData())
 		{
-			s = package.c_str();
+			s = schema.c_str();
 			s.append(".");
 		}
-		s.append(identifier.c_str());
+
+		if (package.hasData())
+		{
+			s.append(package.c_str());
+			s.append(".");
+		}
+
+		s.append(object.c_str());
+
 		return s;
 	}
 
 public:
-	MetaName identifier;
+	MetaName object;
+	MetaName schema;
 	MetaName package;
 };
+
+using QualifiedNameMetaNamePair = Firebird::FullPooledPair<QualifiedName, MetaName>;
 
 } // namespace Jrd
 

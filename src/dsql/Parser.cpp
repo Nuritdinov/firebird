@@ -711,15 +711,14 @@ int Parser::yylexAux()
 
 		if (introducerCharSetName)
 		{
-			const auto symbol = METD_get_charset(scratch->getTransaction(),
-				introducerCharSetName->length(), introducerCharSetName->c_str());
+			const auto symbol = METD_get_charset(scratch->getTransaction(), *introducerCharSetName);
 
 			if (!symbol)
 			{
 				// character set name is not defined
 				ERRD_post(
 					Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
-					Arg::Gds(isc_charset_not_found) << *introducerCharSetName);
+					Arg::Gds(isc_charset_not_found) << introducerCharSetName->toString());
 			}
 
 			currentCharSet = INTL_charset_lookup(tdbb, symbol->intlsym_ttype);

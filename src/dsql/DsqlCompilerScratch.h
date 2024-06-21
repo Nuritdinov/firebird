@@ -96,6 +96,7 @@ public:
 		  mainScratch(aMainScratch),
 		  outerMessagesMap(p),
 		  outerVarsMap(p),
+		  ddlSchema(p),
 		  ctes(p),
 		  cteAliases(p),
 		  subFunctions(p),
@@ -151,13 +152,25 @@ public:
 		dsqlStatement = aDsqlStatement;
 	}
 
+	void qualifyNewName(QualifiedName& name) const
+	{
+		thread_db* tdbb = JRD_get_thread_data();
+		dbb->dbb_attachment->qualifyNewName(tdbb, name);
+	}
+
+	void qualifyExistingName(QualifiedName& name, ObjectType objectType) const
+	{
+		thread_db* tdbb = JRD_get_thread_data();
+		dbb->dbb_attachment->qualifyExistingName(tdbb, name, objectType);
+	}
+
 	void putBlrMarkers(ULONG marks);
 	void putDtype(const TypeClause* field, bool useSubType);
 	void putType(const TypeClause* type, bool useSubType);
-	void putLocalVariableDecl(dsql_var* variable, DeclareVariableNode* hostParam, const MetaName& collationName);
+	void putLocalVariableDecl(dsql_var* variable, DeclareVariableNode* hostParam, const QualifiedName& collationName);
 	void putLocalVariableInit(dsql_var* variable, const DeclareVariableNode* hostParam);
 
-	void putLocalVariable(dsql_var* variable, DeclareVariableNode* hostParam, const MetaName& collationName)
+	void putLocalVariable(dsql_var* variable, DeclareVariableNode* hostParam, const QualifiedName& collationName)
 	{
 		putLocalVariableDecl(variable, hostParam, collationName);
 		putLocalVariableInit(variable, hostParam);
@@ -302,7 +315,7 @@ public:
 	USHORT clientDialect = 0;				// dialect passed into the API call
 	USHORT inOuterJoin = 0;					// processing inside outer-join part
 	Firebird::string aliasRelationPrefix;	// prefix for every relation-alias.
-	MetaName package;						// package being defined
+	QualifiedName package;				// package being defined
 	Firebird::Stack<SelectExprNode*> currCtes;	// current processing CTE's
 	dsql_ctx* recursiveCtx = nullptr;		// context of recursive CTE
 	USHORT recursiveCtxId = 0;				// id of recursive union stream context
@@ -317,6 +330,7 @@ public:
 	DsqlCompilerScratch* mainScratch = nullptr;
 	Firebird::NonPooledMap<USHORT, USHORT> outerMessagesMap;	// <outer, inner>
 	Firebird::NonPooledMap<USHORT, USHORT> outerVarsMap;		// <outer, inner>
+	MetaName ddlSchema;
 
 private:
 	Firebird::HalfStaticArray<SelectExprNode*, 4> ctes; // common table expressions

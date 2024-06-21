@@ -58,9 +58,10 @@ bool CMP_procedure_arguments(
 	NestConst<Jrd::MessageNode>& message,
 	Firebird::Arg::StatusVector& mismatchStatus);
 
-void CMP_post_access(Jrd::thread_db*, Jrd::CompilerScratch*, const Jrd::MetaName&, SLONG ssRelationId,
-					 Jrd::SecurityClass::flags_t, ObjectType obj_type, const Jrd::MetaName&,
-					 const Jrd::MetaName& = "");
+void CMP_post_access(Jrd::thread_db*, Jrd::CompilerScratch*, const Jrd::QualifiedName&, SLONG ssRelationId,
+					 Jrd::SecurityClass::flags_t, ObjectType obj_type,
+					 const Jrd::QualifiedName&,
+					 const Jrd::MetaName& = {});
 
 void CMP_post_procedure_access(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_prc*);
 void CMP_post_resource(Jrd::ResourceList*, void*, Jrd::Resource::rsc_s, USHORT);

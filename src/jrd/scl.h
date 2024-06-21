@@ -25,6 +25,7 @@
 #define JRD_SCL_H
 
 #include "../jrd/MetaName.h"
+#include "../jrd/QualifiedName.h"
 #include "../common/classes/tree.h"
 #include "../common/security.h"
 #include "../jrd/obj.h"
@@ -48,15 +49,15 @@ public:
 	typedef ULONG flags_t;
 	enum BlobAccessCheck { BA_UNKNOWN, BA_SUCCESS, BA_FAILURE };
 
-	SecurityClass(Firebird::MemoryPool &pool, const MetaName& name, const MetaName& userName)
-		: scl_flags(0), sclClassUser(pool, MetaNamePair(name, userName)), scl_blb_access(BA_UNKNOWN)
+	SecurityClass(Firebird::MemoryPool &pool, const QualifiedName& name, const MetaName& userName)
+		: scl_flags(0), sclClassUser(pool, QualifiedNameMetaNamePair(name, userName)), scl_blb_access(BA_UNKNOWN)
 	{}
 
 	flags_t scl_flags;			// Access permissions
-	const MetaNamePair sclClassUser;
+	const QualifiedNameMetaNamePair sclClassUser;
 	BlobAccessCheck scl_blb_access;
 
-	static const MetaNamePair& generate(const void*, const SecurityClass* item)
+	static const QualifiedNameMetaNamePair& generate(const void*, const SecurityClass* item)
 	{
 		return item->sclClassUser;
 	}
@@ -64,7 +65,7 @@ public:
 
 typedef Firebird::BePlusTree<
 	SecurityClass*,
-	MetaNamePair,
+	QualifiedNameMetaNamePair,
 	Firebird::MemoryPool,
 	SecurityClass
 > SecurityClassList;

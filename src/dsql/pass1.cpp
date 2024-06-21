@@ -352,18 +352,24 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, RecordSourceNode*
 	// figure out whether this is a relation or a procedure
 	// and give an error if it is neither
 
-	MetaName relation_name;
+	QualifiedName relation_name;
 	ProcedureSourceNode* procNode = NULL;
 	RelationSourceNode* relNode = NULL;
 	SelectExprNode* selNode = NULL;
 
 	if ((procNode = nodeAs<ProcedureSourceNode>(relationNode)))
-		relation_name = procNode->dsqlName.identifier;
+	{
+		dsqlScratch->qualifyExistingName(procNode->dsqlName, obj_procedure);
+		relation_name = procNode->dsqlName;
+	}
 	else if ((relNode = nodeAs<RelationSourceNode>(relationNode)))
+	{
+		dsqlScratch->qualifyExistingName(relNode->dsqlName, obj_relation);
 		relation_name = relNode->dsqlName;
+	}
 	//// TODO: LocalTableSourceNode
 	else if ((selNode = nodeAs<SelectExprNode>(relationNode)))
-		relation_name = selNode->alias.c_str();
+		relation_name.object = selNode->alias.c_str();	// FIXME: ??
 
 	SelectExprNode* cte = NULL;
 
@@ -373,9 +379,10 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, RecordSourceNode*
 	}
 	else if (procNode && (procNode->dsqlName.package.hasData() || procNode->inputSources))
 	{
+		// FIXME: schema
 		if (procNode->dsqlName.package.isEmpty())
 		{
-			const auto subProcedure = dsqlScratch->getSubProcedure(procNode->dsqlName.identifier);
+			const auto subProcedure = dsqlScratch->getSubProcedure(procNode->dsqlName.object);
 			procedure = subProcedure ? subProcedure->dsqlProcedure : NULL;
 		}
 
@@ -392,13 +399,14 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, RecordSourceNode*
 					  									   Arg::Num(relationNode->column));
 		}
 	}
-	else if ((cte = dsqlScratch->findCTE(relation_name)))
+	else if ((cte = dsqlScratch->findCTE(relation_name.object)))	// FIXME: ??
 		relationNode = cte;
 	else
 	{
+		// FIXME: schema
 		if (procNode && procNode->dsqlName.package.isEmpty())
 		{
-			const auto subProcedure = dsqlScratch->getSubProcedure(procNode->dsqlName.identifier);
+			const auto subProcedure = dsqlScratch->getSubProcedure(procNode->dsqlName.object);
 			procedure = subProcedure ? subProcedure->dsqlProcedure : NULL;
 		}
 
@@ -412,7 +420,7 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, RecordSourceNode*
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_relation_err) <<
-					  Arg::Gds(isc_random) << Arg::Str(relation_name) <<
+					  Arg::Gds(isc_random) << relation_name.toString() <<
 					  Arg::Gds(isc_dsql_line_col_error) << Arg::Num(relationNode->line) <<
 					  									   Arg::Num(relationNode->column));
 		}
@@ -476,7 +484,7 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, RecordSourceNode*
 		if (str.hasData())
 			str = pass1_alias_concat(dsqlScratch->aliasRelationPrefix, str);
 		else
-			str = pass1_alias_concat(dsqlScratch->aliasRelationPrefix, relation_name.c_str());
+			str = pass1_alias_concat(dsqlScratch->aliasRelationPrefix, relation_name.object.c_str());	// FIXME:
 	}
 
 	if (str.hasData())
@@ -504,13 +512,13 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, RecordSourceNode*
 			}
 			else if (conflict->ctx_procedure)
 			{
-				conflict_name = conflict->ctx_procedure->prc_name.identifier.c_str();
+				conflict_name = conflict->ctx_procedure->prc_name.object.c_str();
 				error_code = isc_procedure_conflict_error;
 				// alias %s conflicts with a procedure in the same dsqlScratch.
 			}
 			else if (conflict->ctx_relation)
 			{
-				conflict_name = conflict->ctx_relation->rel_name.c_str();
+				conflict_name = conflict->ctx_relation->rel_name.object.c_str();	// FIXME:
 				error_code = isc_relation_conflict_err;
 				// alias %s conflicts with a relation in the same dsqlScratch.
 			}
@@ -668,7 +676,7 @@ void PASS1_ambiguity_check(DsqlCompilerScratch* dsqlScratch,
 				strcat(buffer, "table ");
 			else
 				strcat(buffer, "view ");
-			strcat(buffer, relation->rel_name.c_str());
+			strcat(buffer, relation->rel_name.toString().c_str());
 		}
 		else if (procedure)
 		{
@@ -1481,7 +1489,7 @@ static ValueListNode* pass1_group_by_list(DsqlCompilerScratch* dsqlScratch, Valu
 		if ((field = nodeAs<FieldNode>(sub)))
 		{
 			// check for alias or field node
-			if (selectList && field->dsqlQualifier.isEmpty() && field->dsqlName.hasData())
+			if (selectList && field->dsqlQualifier.object.isEmpty() && field->dsqlName.hasData())
 			{
 				// AB: Check first against the select list for matching column.
 				// When no matches at all are found we go on with our
@@ -2373,7 +2381,7 @@ ValueListNode* PASS1_sort(DsqlCompilerScratch* dsqlScratch, ValueListNode* input
 			ValueExprNode* aliasNode = NULL;
 
 			// check for alias or field node
-			if (selectList && field->dsqlQualifier.isEmpty() && field->dsqlName.hasData())
+			if (selectList && field->dsqlQualifier.object.isEmpty() && field->dsqlName.hasData())
 			{
 				// AB: Check first against the select list for matching column.
 				// When no matches at all are found we go on with our

@@ -253,7 +253,7 @@ namespace
 			const auto attachment = tdbb->getAttachment();
 			const auto matcher = attachment->att_repl_matcher.get();
 
-			if (matcher && !matcher->matchTable(relation->rel_name))
+			if (matcher && !matcher->matchTable(relation->rel_name.object))	// FIXME:
 				return false;
 		}
 		// Do not replicate RDB$BACKUP_HISTORY as it describes physical-level things
@@ -527,7 +527,7 @@ void REPL_store(thread_db* tdbb, const record_param* rpb, jrd_tra* transaction)
 	ReplicatedRecordImpl replRecord(tdbb, relation, record);
 
 	replicator->insertRecord(&status,
-							 relation->rel_name.c_str(),
+							 relation->rel_name.object.c_str(),	// FIXME: schema
 							 &replRecord);
 
 	checkStatus(tdbb, status, transaction);
@@ -576,7 +576,7 @@ void REPL_modify(thread_db* tdbb, const record_param* orgRpb,
 	ReplicatedRecordImpl replNewRecord(tdbb, relation, newRecord);
 
 	replicator->updateRecord(&status,
-							 relation->rel_name.c_str(),
+							 relation->rel_name.object.c_str(),	// FIXME: schema
 							 &replOrgRecord, &replNewRecord);
 
 	checkStatus(tdbb, status, transaction);
@@ -609,7 +609,7 @@ void REPL_erase(thread_db* tdbb, const record_param* rpb, jrd_tra* transaction)
 	ReplicatedRecordImpl replRecord(tdbb, relation, record);
 
 	replicator->deleteRecord(&status,
-							 relation->rel_name.c_str(),
+							 relation->rel_name.object.c_str(),	// FIXME: schema
 							 &replRecord);
 
 	checkStatus(tdbb, status, transaction);
@@ -636,19 +636,19 @@ void REPL_gen_id(thread_db* tdbb, SLONG genId, SINT64 value)
 
 	const auto attachment = tdbb->getAttachment();
 
-	MetaName genName;
+	QualifiedName genName;
 	if (!attachment->att_generators.lookup(genId, genName))
 	{
 		MET_lookup_generator_id(tdbb, genId, genName, nullptr);
 		attachment->att_generators.store(genId, genName);
 	}
 
-	fb_assert(genName.hasData());
+	fb_assert(genName.object.hasData());
 
 	AutoSetRestoreFlag<ULONG> noRecursion(&tdbb->tdbb_flags, TDBB_repl_in_progress, true);
 
 	FbLocalStatus status;
-	replicator->setSequence(&status, genName.c_str(), value);
+	// FIXME: replicator->setSequence(&status, genName.c_str(), value);
 
 	checkStatus(tdbb, status);
 }
@@ -670,6 +670,7 @@ void REPL_exec_sql(thread_db* tdbb, jrd_tra* transaction, const string& sql)
 
 	// This place is already protected from recursion in calling code
 
+	// FIXME: must use current schema search path
 	replicator->executeSqlIntl(&status, charset, sql.c_str());
 
 	checkStatus(tdbb, status, transaction);

@@ -4772,6 +4772,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 		const DdlTriggerContext* context = Stack<DdlTriggerContext*>::const_iterator(
 			attachment->ddlTriggersContext).object();
 
+		// FIXME: schema
 		if (nameStr == EVENT_TYPE_NAME)
 			resultStr = context->eventType;
 		else if (nameStr == OBJECT_TYPE_NAME)
@@ -4780,23 +4781,23 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 			resultStr = context->eventType + " " + context->objectType;
 		else if (nameStr == OBJECT_NAME)
 		{
-			resultStr = context->objectName.c_str();
+			resultStr = context->objectName.object.c_str();
 			resultType = ttype_metadata;
 		}
 		else if (nameStr == OLD_OBJECT_NAME)
 		{
-			if (context->oldObjectName.isEmpty())
+			if (context->oldObjectName.object.isEmpty())
 				return NULL;
 
-			resultStr = context->oldObjectName.c_str();
+			resultStr = context->oldObjectName.object.c_str();
 			resultType = ttype_metadata;
 		}
 		else if (nameStr == NEW_OBJECT_NAME)
 		{
-			if (context->newObjectName.isEmpty())
+			if (context->newObjectName.object.isEmpty())
 				return NULL;
 
-			resultStr = context->newObjectName.c_str();
+			resultStr = context->newObjectName.object.c_str();
 			resultType = ttype_metadata;
 		}
 		else if (nameStr == SQL_TEXT_NAME)
@@ -5347,8 +5348,9 @@ dsc* evlMakeDbkey(Jrd::thread_db* tdbb, const SysFunction* function, const NestV
 {
 	// MAKE_DBKEY ( REL_NAME | REL_ID, RECNUM [, DPNUM [, PPNUM] ] )
 
-	Database* const dbb = tdbb->getDatabase();
-	Request* const request = tdbb->getRequest();
+	const auto dbb = tdbb->getDatabase();
+	const auto attachment = tdbb->getAttachment();
+	const auto request = tdbb->getRequest();
 
 	fb_assert(args.getCount() >= 2 && args.getCount() <= 4);
 
@@ -5360,12 +5362,13 @@ dsc* evlMakeDbkey(Jrd::thread_db* tdbb, const SysFunction* function, const NestV
 
 	if (argDsc->isText())
 	{
-		MetaName relName;
-		MOV_get_metaname(tdbb, argDsc, relName);
+		QualifiedName relName;
+		MOV_get_metaname(tdbb, argDsc, relName.object);	// FIXME:
+		attachment->qualifyExistingName(tdbb, relName, obj_relation);
 
 		const jrd_rel* const relation = MET_lookup_relation(tdbb, relName);
 		if (!relation)
-			(Arg::Gds(isc_relnotdef) << Arg::Str(relName)).raise();
+			(Arg::Gds(isc_relnotdef) << relName.toString()).raise();
 
 		relId = relation->rel_id;
 	}

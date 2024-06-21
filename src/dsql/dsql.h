@@ -116,18 +116,18 @@ namespace Jrd {
 class dsql_dbb : public pool_alloc<dsql_type_dbb>
 {
 public:
-	Firebird::LeftPooledMap<MetaName, class dsql_rel*> dbb_relations;		// known relations in database
+	Firebird::LeftPooledMap<QualifiedName, class dsql_rel*> dbb_relations;		// known relations in database
 	Firebird::LeftPooledMap<QualifiedName, class dsql_prc*> dbb_procedures;	// known procedures in database
 	Firebird::LeftPooledMap<QualifiedName, class dsql_udf*> dbb_functions;	// known functions in database
-	Firebird::LeftPooledMap<MetaName, class dsql_intlsym*> dbb_charsets;	// known charsets in database
-	Firebird::LeftPooledMap<MetaName, class dsql_intlsym*> dbb_collations;	// known collations in database
+	Firebird::LeftPooledMap<QualifiedName, class dsql_intlsym*> dbb_charsets;	// known charsets in database
+	Firebird::LeftPooledMap<QualifiedName, class dsql_intlsym*> dbb_collations;	// known collations in database
 	Firebird::NonPooledMap<SSHORT, dsql_intlsym*> dbb_charsets_by_id;		// charsets sorted by charset_id
 	Firebird::LeftPooledMap<Firebird::string, DsqlDmlRequest*> dbb_cursors;	// known cursors in database
 	Firebird::AutoPtr<DsqlStatementCache> dbb_statement_cache;
 
 	MemoryPool&		dbb_pool;			// The current pool for the dbb
 	Attachment*		dbb_attachment;
-	MetaName dbb_dfl_charset;
+	QualifiedName dbb_dfl_charset;
 	bool			dbb_no_charset;
 
 	dsql_dbb(MemoryPool& p, Attachment* attachment);
@@ -156,7 +156,7 @@ public:
 
 	dsql_fld* rel_fields;			// Field block
 	//dsql_rel* rel_base_relation;	// base relation for an updatable view
-	MetaName rel_name;				// Name of relation
+	QualifiedName rel_name;		// Name of relation
 	MetaName rel_owner;				// Owner of relation
 	USHORT rel_id;					// Relation id
 	USHORT rel_dbkey_length;
@@ -175,7 +175,7 @@ enum rel_flags_vals {
 class TypeClause
 {
 public:
-	TypeClause(MemoryPool& pool, const MetaName& aCollate)
+	TypeClause(MemoryPool& pool, const QualifiedName& aCollate)
 		: fieldSource(pool),
 		  typeOfTable(pool),
 		  typeOfName(pool),
@@ -231,11 +231,11 @@ public:
 	SSHORT textType = 0;
 	bool fullDomain = false;			// Domain name without TYPE OF prefix
 	bool notNull = false;				// NOT NULL was explicit specified
-	MetaName fieldSource;
-	MetaName typeOfTable;				// TYPE OF table name
-	MetaName typeOfName;				// TYPE OF
-	MetaName collate;
-	MetaName charSet;					// empty means not specified
+	QualifiedName fieldSource;
+	QualifiedName typeOfTable;		// TYPE OF table name
+	QualifiedName typeOfName;		// TYPE OF
+	QualifiedName collate;
+	QualifiedName charSet;			// empty means not specified
 	MetaName subTypeName;				// Subtype name for later resolution
 	USHORT flags = 0;
 	USHORT elementDtype = 0;			// Data type of array element
@@ -249,16 +249,13 @@ class dsql_fld : public TypeClause
 {
 public:
 	explicit dsql_fld(MemoryPool& p)
-		: TypeClause(p, nullptr),
+		: TypeClause(p, {}),
 		  fld_name(p)
 	{
 	}
 
 public:
-	void resolve(DsqlCompilerScratch* dsqlScratch, bool modifying = false)
-	{
-		DDL_resolve_intl_type(dsqlScratch, this, collate, modifying);
-	}
+	void resolve(DsqlCompilerScratch* dsqlScratch, bool modifying = false);
 
 public:
 	dsql_fld* fld_next = nullptr;		// Next field in relation
@@ -297,7 +294,7 @@ public:
 
 	dsql_fld* prc_inputs = nullptr;		// Input parameters
 	dsql_fld* prc_outputs = nullptr;	// Output parameters
-	QualifiedName prc_name;				// Name of procedure
+	QualifiedName prc_name;			// Name of procedure
 	MetaName prc_owner;					// Owner of procedure
 	SSHORT prc_in_count = 0;
 	SSHORT prc_def_count = 0;			// number of inputs with default values
@@ -401,7 +398,7 @@ public:
 	{
 	}
 
-	MetaName intlsym_name;
+	QualifiedName intlsym_name;
 	USHORT intlsym_type = 0;		// what type of name
 	USHORT intlsym_flags = 0;
 	SSHORT intlsym_ttype = 0;		// id of implementation
@@ -497,7 +494,7 @@ public:
 	Firebird::string getObjectName() const
 	{
 		if (ctx_relation)
-			return ctx_relation->rel_name.c_str();
+			return ctx_relation->rel_name.toString();
 		if (ctx_procedure)
 			return ctx_procedure->prc_name.toString();
 		return "";
@@ -571,7 +568,7 @@ public:
 	MetaName par_dbkey_relname;			// Context of internally requested dbkey
 	MetaName par_rec_version_relname;	// Context of internally requested rec. version
 	MetaName par_name;					// Parameter name, if any
-	MetaName par_rel_name;				// Relation name, if any
+	QualifiedName par_rel_name;		// Relation name, if any
 	MetaName par_owner_name;			// Owner name, if any
 	MetaName par_rel_alias;				// Relation alias, if any
 	MetaName par_alias;					// Alias, if any
@@ -605,7 +602,7 @@ public:
 		  s(p, str)
 	{ }
 
-	explicit IntlString(const Firebird::string& str, const MetaName& cs = NULL)
+	explicit IntlString(const Firebird::string& str, const QualifiedName& cs = {})
 		: charset(cs),
 		  s(str)
 	{ }
@@ -622,12 +619,12 @@ public:
 
 	Firebird::string toUtf8(jrd_tra* transaction) const;
 
-	const MetaName& getCharSet() const
+	const QualifiedName& getCharSet() const
 	{
 		return charset;
 	}
 
-	void setCharSet(const MetaName& value)
+	void setCharSet(const QualifiedName& value)
 	{
 		charset = value;
 	}
@@ -648,7 +645,7 @@ public:
 	}
 
 private:
-	MetaName charset;
+	QualifiedName charset;
 	Firebird::string s;
 };
 
@@ -732,11 +729,11 @@ struct SignatureParameter
 	SSHORT type = 0;
 	SSHORT number = 0;
 	MetaName name;
-	MetaName fieldSource;
-	MetaName fieldName;
-	MetaName relationName;
-	MetaName charSetName;
-	MetaName collationName;
+	QualifiedName fieldSource;
+	QualifiedName fieldName;	// FIXME: ?
+	QualifiedName relationName;
+	QualifiedName charSetName;
+	QualifiedName collationName;
 	MetaName subTypeName;
 	std::optional<SSHORT> collationId;
 	std::optional<SSHORT> nullFlag;
@@ -763,8 +760,9 @@ struct SignatureParameter
 			number == o.number &&
 			name == o.name &&
 			(fieldSource == o.fieldSource ||
-				(fb_utils::implicit_domain(fieldSource.c_str()) &&
-					fb_utils::implicit_domain(o.fieldSource.c_str()))) &&
+				(fieldSource.schema == o.fieldSource.schema &&
+					fb_utils::implicit_domain(fieldSource.object.c_str()) &&
+					fb_utils::implicit_domain(o.fieldSource.object.c_str()))) &&
 			fieldName == o.fieldName &&
 			relationName == o.relationName &&
 			collationId == o.collationId &&

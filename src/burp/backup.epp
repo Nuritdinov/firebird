@@ -1,3 +1,4 @@
+// FIXME: backup, restore, permissions, every non-core routine
 /*
  *	PROGRAM:	JRD Backup and Restore Program
  *	MODULE:		backup.epp
@@ -915,6 +916,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 		Firebird::string nm, sql;
 		nm.assign(name, name_len);
 		BURP_makeSymbol(tdgbl, nm);
+		// FIXME: schema
 		sql = "select first(1) gen_id(" + nm + ", 0) from rdb$database";
 
 		BurpSql getGenerator(tdgbl, sql.c_str());

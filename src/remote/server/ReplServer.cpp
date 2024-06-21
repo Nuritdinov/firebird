@@ -20,6 +20,7 @@
  *  Contributor(s): ______________________________________.
  */
 
+// FIXME: schema
 #include "firebird.h"
 #include "firebird/Message.h"
 #include "../common/common.h"

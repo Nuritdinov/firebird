@@ -80,8 +80,8 @@ public:
 			if (m_statement->function)
 				return m_statement->function->getName().toString();
 
-			if (m_statement->triggerName.hasData())
-				return m_statement->triggerName.c_str();
+			if (m_statement->triggerName.object.hasData())
+				return m_statement->triggerName.toString();
 		}
 
 		return "";
@@ -580,7 +580,7 @@ public:
 		StatementHolder(request),
 		m_name(getName()),
 		m_relationName((request->req_rpb.hasData() && request->req_rpb[0].rpb_relation) ?
-			request->req_rpb[0].rpb_relation->rel_name : ""),
+			request->req_rpb[0].rpb_relation->rel_name.toString() : ""),
 		m_which(which),
 		m_action(request->req_trigger_action),
 		m_perf(perf)

@@ -49,6 +49,7 @@ namespace {
 
 // BLR to search database for user name record
 
+// FIXME: schema
 const UCHAR PWD_REQUEST[] =
 {
 	blr_version5,

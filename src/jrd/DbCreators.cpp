@@ -220,6 +220,7 @@ CreateGrant checkCreateDatabaseGrant(const MetaString& userName, const MetaStrin
 	Message res2;
 	Field<Text> priv(res2, 8);
 
+	// FIXME: ok?
 	const char* sql =
 		"with recursive role_tree as ( "
 		"   select rdb$relation_name as nm, 0 as ur from rdb$user_privileges "

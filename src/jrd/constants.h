@@ -127,6 +127,7 @@ const int IMPLICIT_PK_PREFIX_LEN = 11;
 // The invisible "id zero" generator.
 const char* const MASTER_GENERATOR = ""; //Was "RDB$GENERATORS";
 
+constexpr const char* SYSTEM_SCHEMA = "SYSTEM";
 
 // Automatically created security classes for SQL objects.
 // Keep in sync with trig.h
